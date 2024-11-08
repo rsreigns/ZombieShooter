@@ -1,11 +1,11 @@
 #pragma once
-namespace DEBUG
+namespace Debug
 {
-	static void PrintString(FString Msg, float Duration = 2.f, FColor Color = FColor::Green)
+	static void PrintString(const FString& Msg, float time=2.f,FColor ColorType=FColor::Green)
 	{
 		if (GEngine)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, Duration, Color, Msg);
+			GEngine->AddOnScreenDebugMessage(-1, time, ColorType, Msg);
 		}
 	}
 }
