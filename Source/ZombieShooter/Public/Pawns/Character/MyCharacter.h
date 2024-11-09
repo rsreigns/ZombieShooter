@@ -14,6 +14,7 @@ class USpringArmComponent;
 class UInputAction;
 class UInputMappingContext;
 class UEnhancedInputLocalPlayerSubsystem;
+class AMyPlayerController;
 
 struct FInputActionValue;
 struct FHitResult;
@@ -129,8 +130,8 @@ protected:
 
 #pragma region CoreVariables
 public:
-	UPROPERTY()
-	APlayerController* MyController;
+	
+	//AMyPlayerController* MyController;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "Player|Movement")
 	float WalkSpeed = 300.f;
@@ -149,6 +150,10 @@ public:
 	float TraceRadius = 12.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	bool bIsSingleFireWeapon = true;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
+	FVector LastADSLocation = FVector(0.f, 120.f, 0.f);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
+	float ADSFOV = 60.f;
 
 protected:
 	FTimerHandle FireTimerHandle;
@@ -166,6 +171,8 @@ protected:
 	FHitResult DoSphereTraceByObject(FVector Start, FVector End,float SphereRadius = 5.f, bool ShowDebug = false,
 		bool ForDuration = false, float Duration = 2.f);
 	void HandleInteraction(AActor* InActor);
+
+	void SwitchCamera(bool bChangeStance=false);
 #pragma endregion
 
 #pragma region Getters

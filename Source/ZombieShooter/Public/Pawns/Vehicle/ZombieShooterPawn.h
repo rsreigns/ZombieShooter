@@ -6,6 +6,7 @@
 #include "WheeledVehiclePawn.h"
 #include "ZombieShooterPawn.generated.h"
 
+class AMyPlayerController;
 class AMyCharacter;
 class UInputMappingContext;
 class UCameraComponent;
@@ -132,7 +133,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Weapon")
 	TArray<TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
 	TObjectPtr<AMyCharacter> MyCharacter;
-	TObjectPtr<APlayerController> MyController;
+	//TObjectPtr<AMyPlayerController> MyController;
 	UEnhancedInputLocalPlayerSubsystem* Subsystem;
 	float LastFiredTime;
 	FTimerHandle FireTimerHandle;

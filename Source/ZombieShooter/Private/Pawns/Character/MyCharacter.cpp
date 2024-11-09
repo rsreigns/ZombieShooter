@@ -18,6 +18,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "InputMappingContext.h"
 #include "Pawns/Vehicle/ZombieShooterPawn.h"
+#include "Controller/MyPlayerController.h"
+
 
 #include "DebugHelper.h"
 
@@ -55,24 +57,33 @@ void AMyCharacter::BeginPlay()
 void AMyCharacter::Tick(float Delta)
 {
 	Super::Tick(Delta);
-
+	if (bADS)
+	{
+		FRotator ActorRot = GetActorRotation();
+		FRotator CameraRot = Camera->GetComponentRotation();
+		FRotator NewRot(ActorRot.Pitch, CameraRot.Yaw, ActorRot.Roll);
+		SetActorRotation(NewRot,ETeleportType::TeleportPhysics);
+	}
 }
 
 void AMyCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	SetActorTickEnabled(true);
-	if (!MyController) MyController = Cast<APlayerController>(NewController);
+	//if (!MyController) MyController = Cast<AMyPlayerController>(NewController);
 
 }
 
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	if(!Subsystem) Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(MyController->GetLocalPlayer());
-	Subsystem->ClearAllMappings();
-	Subsystem->AddMappingContext(DefaultMappingContext, 0);
-	if (UEnhancedInputComponent* InputComp = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	AMyPlayerController* MyController = Cast<AMyPlayerController>(GetController());
+	if (MyController)
+	{
+		if (!Subsystem) Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(MyController->GetLocalPlayer());
+		Subsystem->ClearAllMappings();
+		Subsystem->AddMappingContext(DefaultMappingContext, 0);
+		if (UEnhancedInputComponent* InputComp = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 		{
 			InputComp->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::HandleMoveInput);
 			InputComp->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::HandleLookInput);
@@ -94,13 +105,15 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 			InputComp->BindAction(InteractAction, ETriggerEvent::Completed, this, &ThisClass::EndInteract);
 
 			InputComp->BindAction(SwitchCameraAction, ETriggerEvent::Completed, this, &ThisClass::HandleSwitchCamera);
-		}	
+		}
+	}
+
 }
 
 
 void AMyCharacter::HandleMoveInput(const FInputActionValue& Value)
 {
-	DEBUG::PrintString("moving", 0.25f);
+
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	FRotator MovementDirection = FRotator(0.f, GetControlRotation().Yaw, 0.f);
 	if (MovementVector.Y != 0)
@@ -117,14 +130,9 @@ void AMyCharacter::HandleMoveInput(const FInputActionValue& Value)
 
 void AMyCharacter::HandleLookInput(const FInputActionValue& Value)
 {
-	DEBUG::PrintString("looking", 0.25f);
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
-	{
-		AddControllerYawInput(LookAxisVector.X);
-		AddControllerPitchInput(LookAxisVector.Y);
-	}
+	AddControllerYawInput(LookAxisVector.X);
+	AddControllerPitchInput(LookAxisVector.Y);
 }
 
 void AMyCharacter::HandleJumpInput(const FInputActionValue& Value)
@@ -139,15 +147,18 @@ void AMyCharacter::StartFire(const FInputActionValue& Value)
 }
 void AMyCharacter::HandleFire()
 {
-	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
-	FVector StartPoint = GetCameraComponent()->GetComponentLocation();
-	FVector EndPoint = StartPoint + GetCameraComponent()->GetForwardVector() * TraceDistance;
+	if (bADS)
+	{
+		FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
+		FVector StartPoint = GetCameraComponent()->GetComponentLocation();
+		FVector EndPoint = StartPoint + GetCameraComponent()->GetForwardVector() * TraceDistance;
 
-	LastFiredTime = GetWorld()->TimeSeconds;
+		LastFiredTime = GetWorld()->TimeSeconds;
 
-	FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint);
-	FHitResult RealHit = DoLineTraceByObject(MuzzleLocation,
-		OutHit.Location == FVector::ZeroVector ? OutHit.TraceEnd : OutHit.Location, true);
+		FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint);
+		FHitResult RealHit = DoLineTraceByObject(MuzzleLocation,
+			OutHit.Location == FVector::ZeroVector ? OutHit.TraceEnd : OutHit.Location, true);
+	}
 }
 void AMyCharacter::EndFire(const FInputActionValue& Value)
 {
@@ -156,7 +167,10 @@ void AMyCharacter::EndFire(const FInputActionValue& Value)
 }
 void AMyCharacter::StartSprint(const FInputActionValue& Value)
 {
-	GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+	if (!bADS)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+	}
 }
 void AMyCharacter::EndSprint(const FInputActionValue& Value)
 {
@@ -164,14 +178,41 @@ void AMyCharacter::EndSprint(const FInputActionValue& Value)
 }
 void AMyCharacter::StartADS(const FInputActionValue& InputActionValue)
 {
-
+	float CurrentWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	if (CurrentWalkSpeed <= WalkSpeed)
+	{
+		bADS = true;
+		SwitchCamera();
+	}
 }
 void AMyCharacter::EndADS(const FInputActionValue& InputActionValue)
 {
+	bADS = false;
+	SwitchCamera();
+	if (FireTimerHandle.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(FireTimerHandle);
+	}
 }
 void AMyCharacter::HandleSwitchCamera(const FInputActionValue& InputActionValue)
 {
-
+	SwitchCamera(true);
+}
+void AMyCharacter::SwitchCamera(bool ChangeStance)
+{
+	FVector NewOffset = LastADSLocation;
+	if (bADS)
+	{
+		if (ChangeStance) NewOffset *= -1;
+		LastADSLocation = NewOffset;
+		Camera->FieldOfView = ADSFOV;
+	}
+	else
+	{
+		NewOffset = FVector::ZeroVector;
+		Camera->FieldOfView = 90.f;
+	}
+	SpringArm->SocketOffset = NewOffset;
 }
 void AMyCharacter::StartCrouch(const FInputActionValue& InputActionValue)
 {
@@ -199,7 +240,7 @@ void AMyCharacter::HandleInteraction(AActor* InActor)
 		{
 			SetActorHiddenInGame(true);
 			SetActorTickEnabled(false);
-			MyController->Possess(VehiclePawn);
+			GetController()->Possess(VehiclePawn);
 		}
 	}
 }

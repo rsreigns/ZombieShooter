@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "BaseEnemyCharacter.generated.h"
 
+class AEnemyAIController;
+class UBehaviorTree;
+
 UCLASS()
 class ZOMBIESHOOTER_API ABaseEnemyCharacter : public ACharacter
 {
@@ -14,15 +17,28 @@ class ZOMBIESHOOTER_API ABaseEnemyCharacter : public ACharacter
 public:
 
 	ABaseEnemyCharacter();
-
+#pragma region Overrides
 protected:
 
 	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
 
-public:	
-
+public:
 	virtual void Tick(float DeltaTime) override;
+#pragma endregion
 
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+#pragma region CoreVariables
+public:	
+	//AEnemyAIController* MyAIController;
+
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Behavior")
+	//TSubclassOf< AEnemyAIController> AIClass;
+
+	//UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Behavior")
+	//UBehaviorTree* BehaviorTree;
+
+#pragma endregion
+
+
 
 };

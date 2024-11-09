@@ -13,6 +13,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Pawns/Character/MyCharacter.h"
+#include "Controller/MyPlayerController.h"
 
 #include "DebugHelper.h"
 
@@ -55,12 +56,13 @@ void AZombieShooterPawn::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	SetActorTickEnabled(true);
-	if (!MyController) MyController = Cast<APlayerController>(NewController);
-	DEBUG::PrintString("Possessed vehicle", 5.f);
+	//if (!MyController) MyController = Cast<AMyPlayerController>(NewController);
+
 }
 void AZombieShooterPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	AMyPlayerController* MyController = Cast<AMyPlayerController>(GetController());
 	if (!Subsystem) Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(MyController->GetLocalPlayer());
 	Subsystem->ClearAllMappings();
 	Subsystem->AddMappingContext(VehicleMappingContext, 0);
@@ -177,7 +179,7 @@ void AZombieShooterPawn::ExitVehicle(const FInputActionValue& Value)
 		MyCharacter->SetActorLocation(OutLocation);
 		MyCharacter->SetActorHiddenInGame(false);
 		SetActorTickEnabled(false);
-		MyController->Possess(MyCharacter);
+		GetController()->Possess(MyCharacter);
 	}
 }
 

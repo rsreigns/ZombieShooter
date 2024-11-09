@@ -39,7 +39,7 @@ public:
 #pragma region Overrides
 
 	virtual void BeginPlay() override;
-
+	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 #pragma endregion
 
 #pragma region Variables

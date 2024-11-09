@@ -8,6 +8,8 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISenseConfig_Hearing.h"
 #include "Perception/AISenseConfig_Damage.h"
+#include "Perception/AISense_Sight.h"
+#include "Perception/AISense_Hearing.h"
 
 
 AEnemyAIController::AEnemyAIController(const FObjectInitializer& ObjectInitializer)
@@ -21,6 +23,7 @@ AEnemyAIController::AEnemyAIController(const FObjectInitializer& ObjectInitializ
 	PerceptionComp->ConfigureSense(*SightConfig);
 	PerceptionComp->ConfigureSense(*HearConfig);
 	PerceptionComp->OnTargetPerceptionUpdated.AddUniqueDynamic(this, &ThisClass::OnEnemyPerceptionUpdated);
+	SetGenericTeamId(FGenericTeamId(1));
 }
 
 void AEnemyAIController::BeginPlay()
@@ -43,8 +46,51 @@ void AEnemyAIController::BeginPlay()
 	}
 }
 
+ETeamAttitude::Type AEnemyAIController::GetTeamAttitudeTowards(const AActor& Other) const
+{
+	const APawn* OtherPawn = Cast<APawn>(&Other);
+	const IGenericTeamAgentInterface* OtherInterface = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController());
+	if (OtherInterface && OtherInterface->GetGenericTeamId() < GetGenericTeamId())
+	{
+		return ETeamAttitude::Hostile;
+	}
+	return ETeamAttitude::Friendly;
+}
+
 void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
+	UBlackboardComponent* BBComp = GetBlackboardComponent();
+	if (BBComp)
+	{
+		if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
+		{
+			if (!BBComp->GetValueAsObject("Player"))
+			{
+				if (Actor && Stimulus.WasSuccessfullySensed())
+				{
+					BBComp->SetValueAsObject("Player", Actor);
+				}
+				else
+				{
+					BBComp->ClearValue("Player");
+					BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
+				}
+			}
+		}
+		else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
+		{
+			if (Stimulus.WasSuccessfullySensed())
+			{
+				BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
+			}
+			else
+			{
+				BBComp->ClearValue("LastKnownLocation");
+			}
+		}
+	}
+
+
 
 }
 
