@@ -14,6 +14,10 @@
 #include "Kismet/GameplayStatics.h"
 #include "Pawns/Character/MyCharacter.h"
 #include "Controller/MyPlayerController.h"
+#include "GameFramework/DamageType.h"
+#include "Engine/DamageEvents.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/HealthComponent.h"
 
 #include "DebugHelper.h"
 
@@ -44,6 +48,11 @@ AZombieShooterPawn::AZombieShooterPawn()
 	GetMesh()->SetCollisionProfileName(FName("Vehicle"));
 
 	ChaosVehicleMovement = CastChecked<UChaosWheeledVehicleMovementComponent>(GetVehicleMovement());
+
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	HealthComponent->MaxHealth = 500.f;
+
+	GetMesh()->OnComponentHit.AddDynamic(this, &ThisClass::ComponentHit);
 }
 void AZombieShooterPawn::Tick(float Delta)
 {
@@ -58,6 +67,17 @@ void AZombieShooterPawn::PossessedBy(AController* NewController)
 	SetActorTickEnabled(true);
 	//if (!MyController) MyController = Cast<AMyPlayerController>(NewController);
 
+}
+float AZombieShooterPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if (bIsDestroyed) return 0.f;
+	bIsDestroyed = HealthComponent->CastDamage(DamageAmount);
+	if (bIsDestroyed)
+	{
+		DEBUG::PrintString("Vehicle is destroyed", 10.f, FColor::Red);
+		return DamageAmount;
+	}
+	return DamageAmount;
 }
 void AZombieShooterPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
@@ -203,6 +223,29 @@ void AZombieShooterPawn::FireEvent()
 	FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint, true, true);
 }
 
+void AZombieShooterPawn::ComponentHit( UPrimitiveComponent* HitComponent, 
+	AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	float CurrentVelocity = GetVelocity().Size();
+	DEBUG::PrintString(FString::Printf(TEXT("CurrentVelocity : %f"), CurrentVelocity),12.f,FColor::Black);
+	if (CurrentVelocity < 100.f) return;
+	APawn* HitPawn = Cast<APawn>(OtherActor);
+	float HitSpeedMulti = CurrentVelocity/ ChaosVehicleMovement->GetMaxSpeed();
+	if (HitPawn)
+	{
+		float BaseDamage = 10.f;
+		float NewDamage = BaseDamage * CarHitDamageMultiplier * HitSpeedMulti;
+		DEBUG::PrintString(FString::Printf(TEXT("Damage by Car : %f"), NewDamage), 12.f, FColor::Magenta);
+		UGameplayStatics::ApplyDamage(OtherActor, NewDamage, GetInstigator()->GetController(),this, DamageClass);
+		return;
+	}
+	float BaseCarDamage = 50.f;
+	float NewDamage = BaseCarDamage * CarHitDamageMultiplier * HitSpeedMulti;
+	DEBUG::PrintString(FString::Printf(TEXT("Damage to Car : %f"), NewDamage), 12.f, FColor::Magenta);
+	UGameplayStatics::ApplyDamage(this, NewDamage, GetInstigator()->GetController(), this,DamageClass);
+	
+}
+
 FHitResult AZombieShooterPawn::DoLineTraceByObject(FVector Start, FVector End, bool bShouldDrawTrace, bool ForDuration, float Duration)
 {
 	EDrawDebugTrace::Type DebugType = EDrawDebugTrace::None;
@@ -221,7 +264,5 @@ FHitResult AZombieShooterPawn::DoLineTraceByObject(FVector Start, FVector End, b
 
 	return OutHit;
 }
-
-
 
 #undef LOCTEXT_NAMESPACE

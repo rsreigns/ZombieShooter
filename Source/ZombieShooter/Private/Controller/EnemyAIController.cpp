@@ -11,6 +11,7 @@
 #include "Perception/AISense_Sight.h"
 #include "Perception/AISense_Hearing.h"
 
+#include "DebugHelper.h"
 
 AEnemyAIController::AEnemyAIController(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UCrowdFollowingComponent>("PathFollowingComponent"))
@@ -28,6 +29,9 @@ AEnemyAIController::AEnemyAIController(const FObjectInitializer& ObjectInitializ
 
 void AEnemyAIController::BeginPlay()
 {
+	Super::BeginPlay();
+
+
 	UCrowdFollowingComponent* CrowdComp = Cast<UCrowdFollowingComponent>(GetPathFollowingComponent());
 	if (CrowdComp)
 	{
@@ -64,17 +68,16 @@ void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 	{
 		if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
 		{
-			if (!BBComp->GetValueAsObject("Player"))
+			if (Actor && Stimulus.WasSuccessfullySensed())
 			{
-				if (Actor && Stimulus.WasSuccessfullySensed())
-				{
-					BBComp->SetValueAsObject("Player", Actor);
-				}
-				else
-				{
-					BBComp->ClearValue("Player");
-					BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
-				}
+				BBComp->SetValueAsObject("Player", Actor);
+				DEBUG::PrintString("Sensed Player");
+			}
+			else
+			{
+				BBComp->ClearValue("Player");
+				BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
+				DEBUG::PrintString("Player lost, setting LastKnownLocation");
 			}
 		}
 		else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
@@ -82,16 +85,15 @@ void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 			if (Stimulus.WasSuccessfullySensed())
 			{
 				BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
+				DEBUG::PrintString("Heard sound, updating LastKnownLocation");
 			}
 			else
 			{
 				BBComp->ClearValue("LastKnownLocation");
+				DEBUG::PrintString("Lost hearing stimulus, clearing LastKnownLocation");
 			}
 		}
 	}
-
-
-
 }
 
 

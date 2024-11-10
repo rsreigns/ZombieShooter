@@ -19,7 +19,7 @@
 #include "InputMappingContext.h"
 #include "Pawns/Vehicle/ZombieShooterPawn.h"
 #include "Controller/MyPlayerController.h"
-
+#include "GameFramework/PlayerStart.h"
 
 #include "DebugHelper.h"
 
@@ -51,19 +51,12 @@ AMyCharacter::AMyCharacter()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	RespawnLocation = GetActorLocation();
 }
 
 void AMyCharacter::Tick(float Delta)
 {
 	Super::Tick(Delta);
-	if (bADS)
-	{
-		FRotator ActorRot = GetActorRotation();
-		FRotator CameraRot = Camera->GetComponentRotation();
-		FRotator NewRot(ActorRot.Pitch, CameraRot.Yaw, ActorRot.Roll);
-		SetActorRotation(NewRot,ETeleportType::TeleportPhysics);
-	}
 }
 
 void AMyCharacter::PossessedBy(AController* NewController)
@@ -93,7 +86,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 			InputComp->BindAction(SprintAction, ETriggerEvent::Completed, this, &ThisClass::EndSprint);
 
 			InputComp->BindAction(CrouchAction, ETriggerEvent::Started, this, &ThisClass::StartCrouch);
-			InputComp->BindAction(CrouchAction, ETriggerEvent::Started, this, &ThisClass::EndCrouch);
+			InputComp->BindAction(CrouchAction, ETriggerEvent::Completed, this, &ThisClass::EndCrouch);
 
 			InputComp->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::StartFire);
 			InputComp->BindAction(FireAction, ETriggerEvent::Completed, this, &ThisClass::EndFire);
@@ -113,7 +106,7 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AMyCharacter::HandleMoveInput(const FInputActionValue& Value)
 {
-
+	if (bADS) return;
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	FRotator MovementDirection = FRotator(0.f, GetControlRotation().Yaw, 0.f);
 	if (MovementVector.Y != 0)
@@ -156,8 +149,14 @@ void AMyCharacter::HandleFire()
 		LastFiredTime = GetWorld()->TimeSeconds;
 
 		FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint);
-		FHitResult RealHit = DoLineTraceByObject(MuzzleLocation,
-			OutHit.Location == FVector::ZeroVector ? OutHit.TraceEnd : OutHit.Location, true);
+		FVector HitLoc = OutHit.Location;
+		FHitResult RealHit = DoLineTraceByObject(MuzzleLocation,HitLoc,true, true,  1.5f);
+		if (OutHit.bBlockingHit)
+		{
+			UGameplayStatics::ApplyDamage(OutHit.GetActor(), DamageAmount,GetInstigatorController(), this, DamageClass);
+			FVector NormalDirection = HitLoc - MuzzleLocation;
+			OutHit.GetComponent()->AddForceAtLocation(NormalDirection * 500.f, OutHit.Location);
+		}
 	}
 }
 void AMyCharacter::EndFire(const FInputActionValue& Value)
@@ -181,17 +180,22 @@ void AMyCharacter::StartADS(const FInputActionValue& InputActionValue)
 	float CurrentWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
 	if (CurrentWalkSpeed <= WalkSpeed)
 	{
+		SetActorRotation(Camera->GetComponentQuat(), ETeleportType::TeleportPhysics);
 		bADS = true;
 		SwitchCamera();
 	}
 }
 void AMyCharacter::EndADS(const FInputActionValue& InputActionValue)
 {
-	bADS = false;
-	SwitchCamera();
-	if (FireTimerHandle.IsValid())
+	float CurrentWalkSpeed = GetCharacterMovement()->MaxWalkSpeed;
+	if (CurrentWalkSpeed <= WalkSpeed)
 	{
-		GetWorldTimerManager().ClearTimer(FireTimerHandle);
+		bADS = false;
+		SwitchCamera();
+		if (FireTimerHandle.IsValid())
+		{
+			GetWorldTimerManager().ClearTimer(FireTimerHandle);
+		}
 	}
 }
 void AMyCharacter::HandleSwitchCamera(const FInputActionValue& InputActionValue)
@@ -214,19 +218,35 @@ void AMyCharacter::SwitchCamera(bool ChangeStance)
 	}
 	SpringArm->SocketOffset = NewOffset;
 }
+void AMyCharacter::OnDeathEvent()
+{
+	FTimerHandle RespawnTimer;
+	GetWorldTimerManager().SetTimer(RespawnTimer, this, &ThisClass::RespawnPlayer, 4.f);
+}
+void AMyCharacter::RespawnPlayer()
+{
+	SetActorLocation(RespawnLocation);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->SetSimulatePhysics(false);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GetMesh()->SetAllBodiesBelowSimulatePhysics("root", false);
+	GetMesh()->SetCollisionProfileName("CharacterMesh");
+}
 void AMyCharacter::StartCrouch(const FInputActionValue& InputActionValue)
 {
-	Crouch();
+	bCrouching = true;
+	GetCharacterMovement()->MaxWalkSpeed = CrouchSpeed;
 }
 void AMyCharacter::EndCrouch(const FInputActionValue& InputActionValue)
 {
-	UnCrouch();
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	bCrouching = false;
 }
 
 void AMyCharacter::StartInteract(const FInputActionValue& Value)
 {
 	FVector Start = Camera->GetComponentLocation();
-	FVector End = Start + Camera->GetForwardVector() * TraceDistance;
+	FVector End = Start + Camera->GetForwardVector() * InteractionDistance;
 	FHitResult Hit = DoSphereTraceByObject(Start,End,TraceRadius,true);
 	InteractingActor = Hit.GetActor();
 	HandleInteraction(Hit.GetActor());
@@ -236,7 +256,7 @@ void AMyCharacter::HandleInteraction(AActor* InActor)
 	if (InActor)
 	{
 		AZombieShooterPawn* VehiclePawn = Cast<AZombieShooterPawn>(InActor);
-		if (VehiclePawn)
+		if (VehiclePawn && !VehiclePawn->bIsDestroyed)
 		{
 			SetActorHiddenInGame(true);
 			SetActorTickEnabled(false);

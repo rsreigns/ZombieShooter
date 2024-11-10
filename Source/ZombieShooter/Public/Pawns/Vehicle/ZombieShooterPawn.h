@@ -14,6 +14,8 @@ class USpringArmComponent;
 class UInputAction;
 class UChaosWheeledVehicleMovementComponent;
 class UEnhancedInputLocalPlayerSubsystem;
+class UDamageType;
+class UHealthComponent;
 
 struct FInputActionValue;
 struct FHitResult;
@@ -33,6 +35,8 @@ class AZombieShooterPawn : public AWheeledVehiclePawn
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	virtual void Tick(float Delta) override;
 	virtual void PossessedBy(AController* NewController) override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator, AActor* DamageCauser) override;
 
 #pragma endregion
 
@@ -45,6 +49,9 @@ class AZombieShooterPawn : public AWheeledVehiclePawn
 	UCameraComponent* Camera;
 
 	TObjectPtr<UChaosWheeledVehicleMovementComponent> ChaosVehicleMovement;
+public:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Components")
+	UHealthComponent* HealthComponent;
 
 #pragma endregion
 protected:
@@ -117,6 +124,9 @@ protected:
 	void StopShooting();
 	UFUNCTION()
 	void FireEvent();
+	UFUNCTION()
+	void ComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
+		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 	FHitResult DoLineTraceByObject(FVector Start, FVector End,bool bShouldDrawTrace,bool ForDuration,float Duration = 2.f);
 
@@ -132,12 +142,18 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Weapon")
 	TArray<TEnumAsByte<EObjectTypeQuery> > ObjectTypes;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Car")
+	float CarHitDamageMultiplier = 0.5f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Car")
+	TSubclassOf<UDamageType> DamageClass;
+
 	TObjectPtr<AMyCharacter> MyCharacter;
 	//TObjectPtr<AMyPlayerController> MyController;
 	UEnhancedInputLocalPlayerSubsystem* Subsystem;
 	float LastFiredTime;
 	FTimerHandle FireTimerHandle;
-
+public:
+		bool bIsDestroyed = false;
 
 #pragma endregion
 
@@ -146,4 +162,5 @@ public:
 	FORCEINLINE USpringArmComponent* GetBackSpringArm() const { return SpringArm; }
 	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
 	FORCEINLINE const TObjectPtr<UChaosWheeledVehicleMovementComponent>& GetChaosVehicleMovement() const { return ChaosVehicleMovement; }
+	FORCEINLINE UHealthComponent* GetHealthComponent() { return HealthComponent; }
 };

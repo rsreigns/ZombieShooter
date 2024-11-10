@@ -11,6 +11,6 @@ public class ZombieShooter : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[]
 		{ "Core", "CoreUObject", "Engine", "InputCore", "AIModule", "UMG" , "MotionWarping",
 
-            "EnhancedInput", "ChaosVehicles", "PhysicsCore" });
+            "EnhancedInput", "ChaosVehicles", "PhysicsCore","AnimGraphRuntime" });
 	}
 }

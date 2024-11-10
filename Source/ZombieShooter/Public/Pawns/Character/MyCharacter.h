@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "Pawns/Character/BaseCharacter.h"
 #include "Logging/LogMacros.h"
 #include "MyCharacter.generated.h"
 
@@ -15,7 +15,7 @@ class UInputAction;
 class UInputMappingContext;
 class UEnhancedInputLocalPlayerSubsystem;
 class AMyPlayerController;
-
+class UDamageType;
 struct FInputActionValue;
 struct FHitResult;
 
@@ -24,7 +24,7 @@ struct FHitResult;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
-class AMyCharacter : public ACharacter
+class AMyCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 
@@ -137,15 +137,18 @@ public:
 	float WalkSpeed = 300.f;
 	UPROPERTY(EditDefaultsOnly,  BlueprintReadOnly, Category = "Player|Movement")
 	float SprintSpeed = 600.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Movement")
+	float CrouchSpeed = 120.f;
 
 	UPROPERTY(EditDefaultsOnly,  BlueprintReadOnly, Category = "Player|Trace")
 	TArray <TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	float FireRate = 0.35f;
-
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
-	float TraceDistance = 2000.f;
+	float TraceDistance = 200000.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
+	float InteractionDistance = 200.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	float TraceRadius = 12.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
@@ -154,14 +157,24 @@ public:
 	FVector LastADSLocation = FVector(0.f, 120.f, 0.f);
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
 	float ADSFOV = 60.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
+	float MaxPitch = 60.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
+	float MaxYaw = 45.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Damage")
+	float DamageAmount = 30.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Damage")
+	TSubclassOf<UDamageType> DamageClass;
 
+	bool bADS;
+	bool bCrouching;
 protected:
 	FTimerHandle FireTimerHandle;
 	float LastFiredTime;
 	float FirstFireDelay;
-	bool bADS;
 	TObjectPtr<AActor> InteractingActor;
 	UEnhancedInputLocalPlayerSubsystem* Subsystem;
+	FVector RespawnLocation;
 #pragma endregion
 
 #pragma region CoreFunctions
@@ -173,6 +186,8 @@ protected:
 	void HandleInteraction(AActor* InActor);
 
 	void SwitchCamera(bool bChangeStance=false);
+	virtual void OnDeathEvent() override;
+	void RespawnPlayer();
 #pragma endregion
 
 #pragma region Getters
