@@ -123,6 +123,7 @@ void ABaseCharacter::OnMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
 
 void ABaseCharacter::OnDeathEvent()
 {
+
 }
 
 

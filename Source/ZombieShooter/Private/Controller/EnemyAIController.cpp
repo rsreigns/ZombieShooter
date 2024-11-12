@@ -30,7 +30,7 @@ void AEnemyAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+	
 	PerceptionComp->OnTargetPerceptionUpdated.AddUniqueDynamic(this, &ThisClass::OnEnemyPerceptionUpdated);
 
 	UCrowdFollowingComponent* CrowdComp = Cast<UCrowdFollowingComponent>(GetPathFollowingComponent());
