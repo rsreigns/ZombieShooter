@@ -164,7 +164,8 @@ protected:
 
 	TObjectPtr<AActor> InteractingActor;
 	UEnhancedInputLocalPlayerSubsystem* Subsystem;
-	FVector RespawnLocation = FVector::ZeroVector;
+	FTransform InitialTransform;
+
 #pragma endregion
 
 #pragma region CoreFunctions
@@ -177,6 +178,8 @@ protected:
 
 	void SwitchCamera(bool bChangeStance=false);
 	virtual void OnDeathEvent() override;
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnDeath();
 	void RespawnPlayer();
 
 #pragma endregion

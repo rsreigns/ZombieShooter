@@ -48,12 +48,15 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 	AController* EventInstigator, AActor* DamageCauser)
 {
 	if (bIsDead) return 0.f;
+	BP_OnReceiveDamage(DamageAmount);
 	bIsDead = HealthComponent->CastDamage(DamageAmount);
 	if (bIsDead)
 	{
 		if (DeathMontage)
 		{
+			OnDeathEvent();
 		PlayMontage(DeathMontage);
+		
 		}
 		return DamageAmount;
 	}
@@ -65,6 +68,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 		{
 			OwningAnimInstance->StopAllMontages(0.f) ;
 			PlayMontage(HitMontage);
+			
 		}
 	}
 
@@ -97,19 +101,20 @@ void ABaseCharacter::OnMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
 	if (!GetCapsuleComponent() && !GetMesh() ) return;
 	if (Montage == DeathMontage)
 	{
-		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		GetMesh()->SetSimulatePhysics(true);
-		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
-		GetMesh()->SetAllBodiesBelowSimulatePhysics("root", true);
-		GetMesh()->SetCollisionProfileName("Ragdoll");
-		if(OwningAnimInstance)	OwningAnimInstance->StopAllMontages(0.4f);
 		if (!GetController()->IsPlayerController())
 		{
+			GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			GetMesh()->SetSimulatePhysics(true);
+			GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+			GetMesh()->SetAllBodiesBelowSimulatePhysics("root", true);
+			GetMesh()->SetCollisionProfileName("Ragdoll");
+			if (OwningAnimInstance)	OwningAnimInstance->StopAllMontages(0.4f);
 			GetController()->UnPossess();
 			SetActorTickEnabled(false);
 			if(HealthComponent) HealthComponent->SetActive(false);
+			GetMesh()->SetCanEverAffectNavigation(true);
 		}
-		OnDeathEvent();
+		
 	}
 }
 

@@ -12,7 +12,7 @@ class UCameraComponent;
 class UParticleSystem;
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, Blueprintable) )
 class ZOMBIESHOOTER_API UWeaponComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -60,10 +60,11 @@ public:
 	UParticleSystem* ImpactEffect;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Effects")
 	UParticleSystem* BeamEffect;
-
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Effects|Sound")
+	USoundBase* FireSound;
 
 	void StartFire();
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void HandleFire();
 	void StopFire();
 

@@ -27,10 +27,13 @@ public:
 #pragma region CoreVariables
 
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "MaxHealth")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Health")
 	float MaxHealth = 100.f;
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category = "Health")
 	float CurrentHealth;
 #pragma endregion
+
+
 
 #pragma region CoreFunctions
 

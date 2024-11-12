@@ -21,6 +21,7 @@
 #include "Controller/MyPlayerController.h"
 #include "GameFramework/PlayerStart.h"
 #include "Components/WeaponComponent.h"
+#include "Components/HealthComponent.h"
 
 #include "DebugHelper.h"
 
@@ -56,7 +57,7 @@ AMyCharacter::AMyCharacter()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	RespawnLocation = GetActorLocation();
+	InitialTransform = GetActorTransform();
 }
 
 void AMyCharacter::Tick(float Delta)
@@ -203,17 +204,11 @@ void AMyCharacter::SwitchCamera(bool ChangeStance)
 }
 void AMyCharacter::OnDeathEvent()
 {
-	FTimerHandle RespawnTimer;
-	GetWorldTimerManager().SetTimer(RespawnTimer, this, &ThisClass::RespawnPlayer, 4.f);
+	RespawnPlayer();
 }
 void AMyCharacter::RespawnPlayer()
 {
-	SetActorLocation(RespawnLocation);
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetMesh()->SetSimulatePhysics(false);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	GetMesh()->SetAllBodiesBelowSimulatePhysics("root", false);
-	GetMesh()->SetCollisionProfileName("CharacterMesh");
+	BP_OnDeath();
 }
 
 void AMyCharacter::StartCrouch(const FInputActionValue& InputActionValue)
@@ -231,7 +226,7 @@ void AMyCharacter::StartInteract(const FInputActionValue& Value)
 {
 	FVector Start = Camera->GetComponentLocation();
 	FVector End = Start + Camera->GetForwardVector() * InteractionDistance;
-	FHitResult Hit = DoSphereTraceByObject(Start,End,TraceRadius,true);
+	FHitResult Hit = DoSphereTraceByObject(Start,End,TraceRadius);
 	InteractingActor = Hit.GetActor();
 	HandleInteraction(Hit.GetActor());
 }

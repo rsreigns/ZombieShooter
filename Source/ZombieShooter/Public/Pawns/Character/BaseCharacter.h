@@ -37,6 +37,7 @@ public:
 #pragma endregion
 
 #pragma region CoreVariables
+	UPROPERTY(BlueprintReadWrite)
 	bool bIsDead = false;
 	UPROPERTY(BlueprintReadOnly)
 	UAnimInstance* OwningAnimInstance;
@@ -54,6 +55,9 @@ public:
 	UFUNCTION()
 	void OnMontageBlendOut(UAnimMontage* Montage, bool bInterrupted);
 	virtual void OnDeathEvent();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnReceiveDamage(float DamageRecieved);
 #pragma endregion
 
 #pragma region Getters

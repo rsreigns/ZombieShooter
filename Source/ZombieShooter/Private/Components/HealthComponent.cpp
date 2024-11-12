@@ -24,8 +24,6 @@ void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 	//{
 	//DEBUG::PrintString(FString::Printf(TEXT("%s 's ,Current Health = %f "),*GetOwner()->GetName(), CurrentHealth),0.f);
 	//}
-
-
 }
 
 bool UHealthComponent::CastDamage(float DamageValue)

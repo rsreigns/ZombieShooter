@@ -36,8 +36,6 @@ class AZombieShooterPawn : public AWheeledVehiclePawn
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	virtual void Tick(float Delta) override;
 	virtual void PossessedBy(AController* NewController) override;
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
-		class AController* EventInstigator, AActor* DamageCauser) override;
 
 #pragma endregion
 
@@ -126,8 +124,15 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent, Category = "Vehicle")
 	void BrakeLights(bool bBraking);
 
-	void StartShooting();
-	void StopShooting();
+	void StartShooting(const FInputActionValue& Value);
+	void StopShooting(const FInputActionValue& Value);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnShootingBegin();
+	UFUNCTION(BlueprintImplementableEvent)
+	void BP_OnShootingEnd();
+
+
 
 	UFUNCTION()
 	void ComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,

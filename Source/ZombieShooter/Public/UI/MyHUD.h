@@ -18,6 +18,7 @@ protected:
 	TSubclassOf<UUserWidget> WidgetArray;
 public:
 	AMyHUD();
+	//UFUNCTION(BlueprintImplementableEvent)
 	virtual void BeginPlay() override;
 
 	UCrosshairUI* CrosshairWidget;

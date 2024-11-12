@@ -52,6 +52,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Behavior")
 	UBehaviorTree* BTAsset;
 
+
+	UPROPERTY()
+	FVector LastPercievedLocation = FVector::ZeroVector;
+	UPROPERTY()
+	bool bIsMoving;
 	
 #pragma endregion
 

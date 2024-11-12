@@ -16,4 +16,5 @@ void AMyHUD::BeginPlay()
 	{
 		CrosshairWidget->AddToViewport();
 	}
+	ReceiveBeginPlay();
 }

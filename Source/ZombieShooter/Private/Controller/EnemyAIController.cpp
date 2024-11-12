@@ -64,51 +64,13 @@ ETeamAttitude::Type AEnemyAIController::GetTeamAttitudeTowards(const AActor& Oth
 
 void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-
-	if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
-	{
-		if (Actor && Stimulus.WasSuccessfullySensed())
-		{
-			FAIMoveRequest MoveRequest;
-			MoveRequest.SetGoalActor(Actor);
-			MoveRequest.SetUsePathfinding(true);
-			MoveRequest.SetAcceptanceRadius(10.f);
-			MoveTo(MoveRequest);
-		}
-		else
-		{
-			
-		}
-	}
-	else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
-	{
-		if (Stimulus.WasSuccessfullySensed())
-		{
-			FAIMoveRequest MoveRequest;
-			MoveRequest.SetGoalLocation(Stimulus.StimulusLocation);
-			MoveRequest.SetUsePathfinding(true);
-			MoveRequest.SetAcceptanceRadius(10.f);
-			MoveTo(MoveRequest);
-		}
-		else
-		{
-			
-		}
-	}
-
-
-}
-
-
-
-	/*UBlackboardComponent* BBComp = GetBlackboardComponent();
+	UBlackboardComponent* BBComp = GetBlackboardComponent();
 	if (BBComp)
 	{
 		if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
 		{
 			if (Actor && Stimulus.WasSuccessfullySensed())
 			{
-				RunBehaviorTree(BTAsset);
 				BBComp->SetValueAsObject("Player", Actor);
 			}
 			else
@@ -128,4 +90,41 @@ void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 				BBComp->ClearValue("LastKnownLocation");
 			}
 		}
-	}*/
+	}
+	//if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
+	//{
+	//	if (Actor && Stimulus.WasSuccessfullySensed())
+	//	{
+	//		FAIMoveRequest MoveRequest;
+	//		MoveRequest.SetGoalActor(Actor);
+	//		MoveRequest.SetUsePathfinding(true);
+	//		MoveRequest.SetAcceptanceRadius(10.f);
+	//		GetPawn()->GetActorLocation();
+	//		MoveTo(MoveRequest);
+	//	}
+	//	else
+	//	{
+	//		
+	//	}
+	//}
+	//else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
+	//{
+	//	if (Stimulus.WasSuccessfullySensed())
+	//	{
+	//		FAIMoveRequest MoveRequest;
+	//		MoveRequest.SetGoalLocation(Stimulus.StimulusLocation);
+	//		MoveRequest.SetUsePathfinding(true);
+	//		MoveRequest.SetAcceptanceRadius(10.f);
+	//		MoveTo(MoveRequest);
+	//	}
+	//	else
+	//	{
+	//		
+	//	}
+	//}
+
+
+}
+
+
+

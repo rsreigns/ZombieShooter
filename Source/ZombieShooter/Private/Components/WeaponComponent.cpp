@@ -59,14 +59,16 @@ void UWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UWeaponComponent::StartFire()
 {
-	DEBUG::PrintString("started fire in Weapon Comp", .5f, FColor::Magenta);
 	FirstFireDelay = FMath::Max(LastFiredTime + FireRate - GetWorld()->TimeSeconds, 0.f);
-	GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &ThisClass::HandleFire, FireRate, !bIsSingleFireWeapon, FirstFireDelay);
+	if (GetWorld())
+	{
+		DEBUG::PrintString(FString::Printf(TEXT("Delay : %f"), FirstFireDelay),5.f,FColor::Black);
+		GetWorld()->GetTimerManager().SetTimer(FireTimerHandle, this, &ThisClass::HandleFire, FireRate, !bIsSingleFireWeapon, FirstFireDelay);
+	}
 }
 
 void UWeaponComponent::HandleFire()
 {
-	DEBUG::PrintString("Firing in weapon comp", .5f, FColor::Green);
 	FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
 	FVector StartPoint = CameraRef->GetComponentLocation();
 	FVector EndPoint = StartPoint + CameraRef->GetForwardVector() * 2000000.f;
@@ -74,7 +76,7 @@ void UWeaponComponent::HandleFire()
 	LastFiredTime = GetWorld()->TimeSeconds;
 
 	FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint);
-
+#pragma region Effects
 	if (BeamEffect)
 	{
 		UParticleSystemComponent* Beam = UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), BeamEffect,MuzzleLocation);
@@ -101,7 +103,12 @@ void UWeaponComponent::HandleFire()
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactEffect, OutHit.Location);
 		}
 	}
+	if (FireSound)
+	{
+		UGameplayStatics::SpawnSound2D(this, FireSound);
+	}
 
+#pragma endregion
 	FVector HitLoc = OutHit.Location;
 	FHitResult RealHit = DoLineTraceByObject(MuzzleLocation, HitLoc);
 	APawn* MyPawn = Cast<APawn>(GetOwner());

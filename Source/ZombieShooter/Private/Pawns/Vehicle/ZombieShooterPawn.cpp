@@ -21,6 +21,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 
 #include "DebugHelper.h"
 
@@ -79,17 +80,7 @@ void AZombieShooterPawn::PossessedBy(AController* NewController)
 	//if (!MyController) MyController = Cast<AMyPlayerController>(NewController);
 
 }
-float AZombieShooterPawn::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
-{
-	if (bIsDestroyed) return 0.f;
-	bIsDestroyed = HealthComponent->CastDamage(DamageAmount);
-	if (bIsDestroyed)
-	{
-		DEBUG::PrintString("Vehicle is destroyed", 10.f, FColor::Red);
-		return DamageAmount;
-	}
-	return DamageAmount;
-}
+
 void AZombieShooterPawn::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -215,39 +206,34 @@ void AZombieShooterPawn::ExitVehicle(const FInputActionValue& Value)
 }
 
 
-void AZombieShooterPawn::StartShooting()
+void AZombieShooterPawn::StartShooting(const FInputActionValue& Value)
 {
 	WeaponComp->StartFire();
 }
 
-void AZombieShooterPawn::StopShooting()
+void AZombieShooterPawn::StopShooting(const FInputActionValue& Value)
 {
 	WeaponComp->StopFire();
 }
 
-
-void AZombieShooterPawn::ComponentHit( UPrimitiveComponent* HitComponent, 
+void AZombieShooterPawn::ComponentHit( UPrimitiveComponent* HitComponent,
 	AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	float CurrentVelocity = GetVelocity().Size2D();
-	DEBUG::PrintString(FString::Printf(TEXT("CurrentVelocity : %f"), CurrentVelocity),12.f,FColor::Black);
-	if (CurrentVelocity < 100.f) return;
+	if (CurrentVelocity < 150.f) return;
 	if (HitPawn && HitPawn == Cast<APawn>(OtherActor)) return;
 	HitPawn = Cast<APawn>(OtherActor);
 	float HitSpeedMulti = CurrentVelocity/ ChaosVehicleMovement->GetMaxSpeed();
-	if (HitPawn)
+	if (HitPawn && !HitPawn->IsPlayerControlled())
 	{
+		UCapsuleComponent* PawnCapsule = HitPawn->GetComponentByClass<UCapsuleComponent>();
+		PawnCapsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		PawnCapsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 		float BaseDamage = 10.f;
 		float NewDamage = BaseDamage * CarHitDamageMultiplier * HitSpeedMulti;
-		DEBUG::PrintString(FString::Printf(TEXT("Damage by Car : %f"), NewDamage), 4.f, FColor::Magenta);
 		UGameplayStatics::ApplyDamage(OtherActor, NewDamage, GetInstigator()->GetController(),this, DamageClass);
 		return;
 	}
-	float BaseCarDamage = 50.f;
-	float NewDamage = BaseCarDamage * CarHitDamageMultiplier * HitSpeedMulti;
-	DEBUG::PrintString(FString::Printf(TEXT("Damage to Car : %f"), NewDamage), 4.f, FColor::Magenta);
-	UGameplayStatics::ApplyDamage(this, NewDamage, GetInstigator()->GetController(), this,DamageClass);
-	
 }
 
 FHitResult AZombieShooterPawn::DoLineTraceByObject(FVector Start, FVector End, bool bShouldDrawTrace, bool ForDuration, float Duration)
