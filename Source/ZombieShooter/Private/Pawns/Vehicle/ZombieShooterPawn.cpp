@@ -3,12 +3,11 @@
 #include "Pawns/Vehicle/ZombieShooterPawn.h"
 #include "Pawns/Vehicle/Wheels/ZombieShooterWheelFront.h"
 #include "Pawns/Vehicle/Wheels/ZombieShooterWheelRear.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-#include "Camera/CameraComponent.h"
+
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+
 #include "ChaosWheeledVehicleMovementComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,6 +17,10 @@
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/HealthComponent.h"
+#include "Components/WeaponComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 
 #include "DebugHelper.h"
 
@@ -53,6 +56,14 @@ AZombieShooterPawn::AZombieShooterPawn()
 	HealthComponent->MaxHealth = 500.f;
 
 	GetMesh()->OnComponentHit.AddDynamic(this, &ThisClass::ComponentHit);
+
+	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+	WeaponComp->bIsSingleFireWeapon = false;
+	WeaponComp->FireRate = 0.1f;
+	WeaponComp->DamageAmount = 50.f;
+
+	WeaponMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMeshComponent"));
+	WeaponMeshComp->SetupAttachment(GetMesh(), "WeaponSocket");
 }
 void AZombieShooterPawn::Tick(float Delta)
 {
@@ -206,42 +217,35 @@ void AZombieShooterPawn::ExitVehicle(const FInputActionValue& Value)
 
 void AZombieShooterPawn::StartShooting()
 {
-	float FirstFireDelay = FMath::Max(LastFiredTime - GetWorld()->TimeSeconds + FireRate, 0.f);
-	GetWorldTimerManager().SetTimer(FireTimerHandle, this, &ThisClass::FireEvent, FireRate, !bIsSingleFireWeapon, FirstFireDelay);
+	WeaponComp->StartFire();
 }
 
 void AZombieShooterPawn::StopShooting()
 {
-	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+	WeaponComp->StopFire();
 }
 
-void AZombieShooterPawn::FireEvent()
-{
-	FVector StartPoint = GetCamera()->GetComponentLocation();
-	FVector EndPoint = StartPoint + GetCamera()->GetForwardVector() * 20000.f;
-	LastFiredTime = GetWorld()->GetTimeSeconds();
-	FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint, true, true);
-}
 
 void AZombieShooterPawn::ComponentHit( UPrimitiveComponent* HitComponent, 
 	AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	float CurrentVelocity = GetVelocity().Size();
+	float CurrentVelocity = GetVelocity().Size2D();
 	DEBUG::PrintString(FString::Printf(TEXT("CurrentVelocity : %f"), CurrentVelocity),12.f,FColor::Black);
 	if (CurrentVelocity < 100.f) return;
-	APawn* HitPawn = Cast<APawn>(OtherActor);
+	if (HitPawn && HitPawn == Cast<APawn>(OtherActor)) return;
+	HitPawn = Cast<APawn>(OtherActor);
 	float HitSpeedMulti = CurrentVelocity/ ChaosVehicleMovement->GetMaxSpeed();
 	if (HitPawn)
 	{
 		float BaseDamage = 10.f;
 		float NewDamage = BaseDamage * CarHitDamageMultiplier * HitSpeedMulti;
-		DEBUG::PrintString(FString::Printf(TEXT("Damage by Car : %f"), NewDamage), 12.f, FColor::Magenta);
+		DEBUG::PrintString(FString::Printf(TEXT("Damage by Car : %f"), NewDamage), 4.f, FColor::Magenta);
 		UGameplayStatics::ApplyDamage(OtherActor, NewDamage, GetInstigator()->GetController(),this, DamageClass);
 		return;
 	}
 	float BaseCarDamage = 50.f;
 	float NewDamage = BaseCarDamage * CarHitDamageMultiplier * HitSpeedMulti;
-	DEBUG::PrintString(FString::Printf(TEXT("Damage to Car : %f"), NewDamage), 12.f, FColor::Magenta);
+	DEBUG::PrintString(FString::Printf(TEXT("Damage to Car : %f"), NewDamage), 4.f, FColor::Magenta);
 	UGameplayStatics::ApplyDamage(this, NewDamage, GetInstigator()->GetController(), this,DamageClass);
 	
 }

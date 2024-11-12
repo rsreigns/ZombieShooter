@@ -18,12 +18,11 @@ AEnemyAIController::AEnemyAIController(const FObjectInitializer& ObjectInitializ
 {
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("SightConfig"));
 	HearConfig = CreateDefaultSubobject<UAISenseConfig_Hearing>(TEXT("HearingConfig"));
-	DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("DamageConfig"));
 
 	PerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("PerceptionComponent"));
 	PerceptionComp->ConfigureSense(*SightConfig);
 	PerceptionComp->ConfigureSense(*HearConfig);
-	PerceptionComp->OnTargetPerceptionUpdated.AddUniqueDynamic(this, &ThisClass::OnEnemyPerceptionUpdated);
+
 	SetGenericTeamId(FGenericTeamId(1));
 }
 
@@ -31,6 +30,8 @@ void AEnemyAIController::BeginPlay()
 {
 	Super::BeginPlay();
 
+
+	PerceptionComp->OnTargetPerceptionUpdated.AddUniqueDynamic(this, &ThisClass::OnEnemyPerceptionUpdated);
 
 	UCrowdFollowingComponent* CrowdComp = Cast<UCrowdFollowingComponent>(GetPathFollowingComponent());
 	if (CrowdComp)
@@ -63,21 +64,57 @@ ETeamAttitude::Type AEnemyAIController::GetTeamAttitudeTowards(const AActor& Oth
 
 void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	UBlackboardComponent* BBComp = GetBlackboardComponent();
+
+	if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
+	{
+		if (Actor && Stimulus.WasSuccessfullySensed())
+		{
+			FAIMoveRequest MoveRequest;
+			MoveRequest.SetGoalActor(Actor);
+			MoveRequest.SetUsePathfinding(true);
+			MoveRequest.SetAcceptanceRadius(10.f);
+			MoveTo(MoveRequest);
+		}
+		else
+		{
+			
+		}
+	}
+	else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
+	{
+		if (Stimulus.WasSuccessfullySensed())
+		{
+			FAIMoveRequest MoveRequest;
+			MoveRequest.SetGoalLocation(Stimulus.StimulusLocation);
+			MoveRequest.SetUsePathfinding(true);
+			MoveRequest.SetAcceptanceRadius(10.f);
+			MoveTo(MoveRequest);
+		}
+		else
+		{
+			
+		}
+	}
+
+
+}
+
+
+
+	/*UBlackboardComponent* BBComp = GetBlackboardComponent();
 	if (BBComp)
 	{
 		if (Stimulus.Type == UAISense::GetSenseID<UAISense_Sight>())
 		{
 			if (Actor && Stimulus.WasSuccessfullySensed())
 			{
+				RunBehaviorTree(BTAsset);
 				BBComp->SetValueAsObject("Player", Actor);
-				DEBUG::PrintString("Sensed Player");
 			}
 			else
 			{
 				BBComp->ClearValue("Player");
 				BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
-				DEBUG::PrintString("Player lost, setting LastKnownLocation");
 			}
 		}
 		else if (Stimulus.Type == UAISense::GetSenseID<UAISense_Hearing>())
@@ -85,16 +122,10 @@ void AEnemyAIController::OnEnemyPerceptionUpdated(AActor* Actor, FAIStimulus Sti
 			if (Stimulus.WasSuccessfullySensed())
 			{
 				BBComp->SetValueAsVector("LastKnownLocation", Stimulus.StimulusLocation);
-				DEBUG::PrintString("Heard sound, updating LastKnownLocation");
 			}
 			else
 			{
 				BBComp->ClearValue("LastKnownLocation");
-				DEBUG::PrintString("Lost hearing stimulus, clearing LastKnownLocation");
 			}
 		}
-	}
-}
-
-
-
+	}*/

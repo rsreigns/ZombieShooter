@@ -20,10 +20,10 @@ void UHealthComponent::BeginPlay()
 void UHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (GetOwner())
-	{
-	DEBUG::PrintString(FString::Printf(TEXT("%s 's ,Current Health = %f "),*GetOwner()->GetName(), CurrentHealth),0.f);
-	}
+	//if (GetOwner())
+	//{
+	//DEBUG::PrintString(FString::Printf(TEXT("%s 's ,Current Health = %f "),*GetOwner()->GetName(), CurrentHealth),0.f);
+	//}
 
 
 }

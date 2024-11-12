@@ -47,6 +47,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, 
 	AController* EventInstigator, AActor* DamageCauser)
 {
+	if (bIsDead) return 0.f;
 	bIsDead = HealthComponent->CastDamage(DamageAmount);
 	if (bIsDead)
 	{
@@ -64,7 +65,6 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 		{
 			OwningAnimInstance->StopAllMontages(0.f) ;
 			PlayMontage(HitMontage);
-			DEBUG::PrintString("Playing hit montage");
 		}
 	}
 
@@ -74,12 +74,14 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ABaseCharacter::PlayMontage(UAnimMontage* MontageToPlay)
 {
+	if (!MontageToPlay) return;
 	if (MontageToPlay == DeathMontage)
 	{
 		OwningAnimInstance->StopAllMontages(0.f);
 		PlayAnimMontage(MontageToPlay);
 		return;
 	}
+	if (bIsDead) return;
 	if (GetCharacterMovement()->IsFalling()) return;
 	if (GetMesh()->GetAnimInstance()->IsAnyMontagePlaying()) return;
 	PlayAnimMontage(MontageToPlay);
@@ -92,6 +94,7 @@ void ABaseCharacter::OnMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 
 void ABaseCharacter::OnMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (!GetCapsuleComponent() && !GetMesh() ) return;
 	if (Montage == DeathMontage)
 	{
 		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -106,7 +109,6 @@ void ABaseCharacter::OnMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
 			SetActorTickEnabled(false);
 			if(HealthComponent) HealthComponent->SetActive(false);
 		}
-		DEBUG::PrintString("Montage End triggered");
 		OnDeathEvent();
 	}
 }

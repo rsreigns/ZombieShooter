@@ -36,6 +36,10 @@ public:
 #pragma region CoreVariables
 public:	
 	bool bIsDead = false;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Crowd")
+	int32 BaseWalkSpeed = 75;
+	UPROPERTY(BlueprintReadOnly)
+	bool bIsInPool;
 
 #pragma endregion
 #pragma region CoreFunctions

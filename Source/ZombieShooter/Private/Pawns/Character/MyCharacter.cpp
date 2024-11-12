@@ -20,6 +20,7 @@
 #include "Pawns/Vehicle/ZombieShooterPawn.h"
 #include "Controller/MyPlayerController.h"
 #include "GameFramework/PlayerStart.h"
+#include "Components/WeaponComponent.h"
 
 #include "DebugHelper.h"
 
@@ -46,6 +47,10 @@ AMyCharacter::AMyCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm);
+
+	WeaponComp = CreateDefaultSubobject<UWeaponComponent>(TEXT("Weapon Component"));
+	WeaponComp->bIsSingleFireWeapon = true;
+	WeaponComp->FireRate = 0.35f;
 }
 
 void AMyCharacter::BeginPlay()
@@ -135,34 +140,15 @@ void AMyCharacter::HandleJumpInput(const FInputActionValue& Value)
 
 void AMyCharacter::StartFire(const FInputActionValue& Value)
 {
-	FirstFireDelay = FMath::Max(LastFiredTime + FireRate - GetWorld()->TimeSeconds, 0.f);
-	GetWorldTimerManager().SetTimer(FireTimerHandle, this, &AMyCharacter::HandleFire, FireRate, !bIsSingleFireWeapon, FirstFireDelay);
-}
-void AMyCharacter::HandleFire()
-{
 	if (bADS)
 	{
-		FVector MuzzleLocation = WeaponMesh->GetSocketLocation("Muzzle");
-		FVector StartPoint = GetCameraComponent()->GetComponentLocation();
-		FVector EndPoint = StartPoint + GetCameraComponent()->GetForwardVector() * TraceDistance;
-
-		LastFiredTime = GetWorld()->TimeSeconds;
-
-		FHitResult OutHit = DoLineTraceByObject(StartPoint, EndPoint);
-		FVector HitLoc = OutHit.Location;
-		FHitResult RealHit = DoLineTraceByObject(MuzzleLocation,HitLoc,true, true,  1.5f);
-		if (OutHit.bBlockingHit)
-		{
-			UGameplayStatics::ApplyDamage(OutHit.GetActor(), DamageAmount,GetInstigatorController(), this, DamageClass);
-			FVector NormalDirection = HitLoc - MuzzleLocation;
-			OutHit.GetComponent()->AddForceAtLocation(NormalDirection * 500.f, OutHit.Location);
-		}
+		WeaponComp->StartFire();
 	}
 }
+
 void AMyCharacter::EndFire(const FInputActionValue& Value)
 {
-	GetWorldTimerManager().ClearTimer(FireTimerHandle);
-	FireTimerHandle.Invalidate();
+	WeaponComp->StopFire();
 }
 void AMyCharacter::StartSprint(const FInputActionValue& Value)
 {
@@ -192,10 +178,7 @@ void AMyCharacter::EndADS(const FInputActionValue& InputActionValue)
 	{
 		bADS = false;
 		SwitchCamera();
-		if (FireTimerHandle.IsValid())
-		{
-			GetWorldTimerManager().ClearTimer(FireTimerHandle);
-		}
+		WeaponComp->StopFire();
 	}
 }
 void AMyCharacter::HandleSwitchCamera(const FInputActionValue& InputActionValue)
@@ -213,7 +196,7 @@ void AMyCharacter::SwitchCamera(bool ChangeStance)
 	}
 	else
 	{
-		NewOffset = FVector::ZeroVector;
+		NewOffset = FVector(0.f,0.f,65.f);
 		Camera->FieldOfView = 90.f;
 	}
 	SpringArm->SocketOffset = NewOffset;
@@ -232,6 +215,7 @@ void AMyCharacter::RespawnPlayer()
 	GetMesh()->SetAllBodiesBelowSimulatePhysics("root", false);
 	GetMesh()->SetCollisionProfileName("CharacterMesh");
 }
+
 void AMyCharacter::StartCrouch(const FInputActionValue& InputActionValue)
 {
 	bCrouching = true;
@@ -256,7 +240,7 @@ void AMyCharacter::HandleInteraction(AActor* InActor)
 	if (InActor)
 	{
 		AZombieShooterPawn* VehiclePawn = Cast<AZombieShooterPawn>(InActor);
-		if (VehiclePawn && !VehiclePawn->bIsDestroyed)
+		if (VehiclePawn)
 		{
 			SetActorHiddenInGame(true);
 			SetActorTickEnabled(false);

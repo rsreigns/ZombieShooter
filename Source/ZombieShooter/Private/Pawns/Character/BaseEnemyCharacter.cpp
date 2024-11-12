@@ -11,7 +11,7 @@
 
 ABaseEnemyCharacter::ABaseEnemyCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 	GetCharacterMovement()->MaxWalkSpeed = 150.f;
 
@@ -20,7 +20,8 @@ ABaseEnemyCharacter::ABaseEnemyCharacter()
 void ABaseEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	float NewSpeed = FMath::RandRange(BaseWalkSpeed - 20, BaseWalkSpeed + 20);
+	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
 }
 
 void ABaseEnemyCharacter::PossessedBy(AController* NewController)

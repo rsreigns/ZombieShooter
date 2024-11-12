@@ -11,6 +11,7 @@ class UAISense;
 class UAISenseConfig_Sight;
 class UAISenseConfig_Hearing;
 class UAISenseConfig_Damage;
+class UBehaviorTree;
 
 UCLASS()
 class ZOMBIESHOOTER_API AEnemyAIController : public AAIController
@@ -48,6 +49,9 @@ public:
 	int32 AvoidanceQuality = 4;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Crowd")
 	float CollisionQueryRange = 500.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Behavior")
+	UBehaviorTree* BTAsset;
+
 	
 #pragma endregion
 

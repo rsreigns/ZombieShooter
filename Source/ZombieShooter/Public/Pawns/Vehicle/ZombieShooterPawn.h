@@ -16,6 +16,7 @@ class UChaosWheeledVehicleMovementComponent;
 class UEnhancedInputLocalPlayerSubsystem;
 class UDamageType;
 class UHealthComponent;
+class UWeaponComponent;
 
 struct FInputActionValue;
 struct FHitResult;
@@ -52,6 +53,11 @@ class AZombieShooterPawn : public AWheeledVehiclePawn
 public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Components")
 	UHealthComponent* HealthComponent;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Components")
+	UWeaponComponent* WeaponComp;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Components")
+	USkeletalMeshComponent* WeaponMeshComp;
+
 
 #pragma endregion
 protected:
@@ -122,8 +128,7 @@ protected:
 
 	void StartShooting();
 	void StopShooting();
-	UFUNCTION()
-	void FireEvent();
+
 	UFUNCTION()
 	void ComponentHit(UPrimitiveComponent* HitComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -146,7 +151,7 @@ protected:
 	float CarHitDamageMultiplier = 0.5f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Car")
 	TSubclassOf<UDamageType> DamageClass;
-
+	TObjectPtr<APawn> HitPawn;
 	TObjectPtr<AMyCharacter> MyCharacter;
 	//TObjectPtr<AMyPlayerController> MyController;
 	UEnhancedInputLocalPlayerSubsystem* Subsystem;
@@ -163,4 +168,5 @@ public:
 	FORCEINLINE UCameraComponent* GetCamera() const { return Camera; }
 	FORCEINLINE const TObjectPtr<UChaosWheeledVehicleMovementComponent>& GetChaosVehicleMovement() const { return ChaosVehicleMovement; }
 	FORCEINLINE UHealthComponent* GetHealthComponent() { return HealthComponent; }
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() { return WeaponMeshComp; }
 };

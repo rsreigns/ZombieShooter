@@ -16,6 +16,7 @@ class UInputMappingContext;
 class UEnhancedInputLocalPlayerSubsystem;
 class AMyPlayerController;
 class UDamageType;
+class UWeaponComponent;
 struct FInputActionValue;
 struct FHitResult;
 
@@ -50,6 +51,8 @@ public:
 	UCameraComponent* Camera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* SpringArm;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Core|Weapon", meta = (AllowPrivateAccess = "true"))
+	UWeaponComponent* WeaponComp;
 
 #pragma endregion
 
@@ -99,7 +102,6 @@ protected:
 
 	UFUNCTION()
 	void StartFire(const FInputActionValue& Value);
-	void HandleFire();
 	
 	UFUNCTION()
 	void EndFire(const FInputActionValue& Value);
@@ -132,6 +134,8 @@ protected:
 public:
 	
 	//AMyPlayerController* MyController;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
+	TArray <TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "Player|Movement")
 	float WalkSpeed = 300.f;
@@ -140,41 +144,27 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Movement")
 	float CrouchSpeed = 120.f;
 
-	UPROPERTY(EditDefaultsOnly,  BlueprintReadOnly, Category = "Player|Trace")
-	TArray <TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
-	float FireRate = 0.35f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
-	float TraceDistance = 200000.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	float InteractionDistance = 200.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	float TraceRadius = 12.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
-	bool bIsSingleFireWeapon = true;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
-	FVector LastADSLocation = FVector(0.f, 120.f, 0.f);
+	FVector LastADSLocation = FVector(0.f, 120.f, 65.f);
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
 	float ADSFOV = 60.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
 	float MaxPitch = 60.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|ADS")
 	float MaxYaw = 45.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Damage")
-	float DamageAmount = 30.f;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Damage")
-	TSubclassOf<UDamageType> DamageClass;
 
 	bool bADS;
 	bool bCrouching;
 protected:
-	FTimerHandle FireTimerHandle;
-	float LastFiredTime;
-	float FirstFireDelay;
+
 	TObjectPtr<AActor> InteractingActor;
 	UEnhancedInputLocalPlayerSubsystem* Subsystem;
-	FVector RespawnLocation;
+	FVector RespawnLocation = FVector::ZeroVector;
 #pragma endregion
 
 #pragma region CoreFunctions
@@ -188,6 +178,7 @@ protected:
 	void SwitchCamera(bool bChangeStance=false);
 	virtual void OnDeathEvent() override;
 	void RespawnPlayer();
+
 #pragma endregion
 
 #pragma region Getters
