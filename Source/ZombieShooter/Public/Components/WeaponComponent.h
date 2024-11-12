@@ -10,6 +10,8 @@ struct FTimerHandle;
 struct FHitResult;
 class UCameraComponent;
 class UParticleSystem;
+class AMyCharacter;
+class ABaseEnemyCharacter;
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent, Blueprintable) )
@@ -30,10 +32,19 @@ public:
 
 public:	
 
-
+#pragma region Global Variables
 	FTimerHandle FireTimerHandle;
 	float LastFiredTime;
 	float FirstFireDelay;
+	TObjectPtr<UCameraComponent> CameraRef;
+	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
+	bool bIsCar = false;
+	TArray<AActor*> ActorsToIgnore;
+
+#pragma endregion
+
+#pragma region CoreVariables
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	TArray <TEnumAsByte<EObjectTypeQuery>> TraceObjectTypes;
 
@@ -45,9 +56,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Damage")
 	TSubclassOf<UDamageType> DamageClass;
-
-	FHitResult DoLineTraceByObject(FVector Start, FVector End, bool ShowDebug = false,
-		bool ForDuration = false, float Duration = 2.f);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Trace")
 	float FireRate = 0.12f;
@@ -62,13 +70,36 @@ public:
 	UParticleSystem* BeamEffect;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Effects|Sound")
 	USoundBase* FireSound;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Car")
+	FVector BoxExtent = FVector(1000.f, 1000.f, 1000.f);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Player|Car")
+	TSubclassOf<AMyCharacter> MyCharClass;
+
+
+
+#pragma endregion
+
+#pragma region CoreFunction
 
 	void StartFire();
 	UFUNCTION(BlueprintCallable)
 	void HandleFire();
 	void StopFire();
 
-	TObjectPtr<UCameraComponent> CameraRef;
-	TObjectPtr<USkeletalMeshComponent> WeaponMesh;
+	void HandleAutoFire();
+	AActor* FindNearestEnemy(TArray<AActor*> OverlappedActors);
+
+	void CastDamageToHitActor(FHitResult InHit);
+
+	void SpawnEffects(FHitResult InHit);
+
+	FHitResult DoLineTraceByObject(FVector Start, FVector End, bool ShowDebug = false,
+		bool ForDuration = false, float Duration = 2.f);
+	FHitResult DoSphereTraceByObject(float SphereRadius, FVector Start, FVector End, bool ShowDebug = false,
+		bool ForDuration = false, float Duration = 2.f);
+	
+
+#pragma endregion
+
 		
 };

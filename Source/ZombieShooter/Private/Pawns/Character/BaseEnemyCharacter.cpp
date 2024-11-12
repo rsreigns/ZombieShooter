@@ -5,7 +5,8 @@
 #include "Controller/EnemyAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/SkeletalMeshComponent.h"
-
+#include "TimerManager.h"
+#include "AI/AIManagerBase.h"
 
 #include "DebugHelper.h"
 
@@ -20,7 +21,7 @@ ABaseEnemyCharacter::ABaseEnemyCharacter()
 void ABaseEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	float NewSpeed = FMath::RandRange(BaseWalkSpeed - 20, BaseWalkSpeed + 20);
+	float NewSpeed = FMath::RandRange(BaseWalkSpeed - 50, BaseWalkSpeed + 50);
 	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
 }
 
@@ -33,6 +34,19 @@ void ABaseEnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ABaseEnemyCharacter::OnDeathEvent()
+{
+	FTimerHandle DeathTimerHandle;
+	GetWorldTimerManager().SetTimer(DeathTimerHandle, this, &ThisClass::SendToPool, 10.f);
+}
+
+void ABaseEnemyCharacter::SendToPool()
+{
+	SetActorEnableCollision(false);
+	SetActorHiddenInGame(true);
+	Destroy();
 }
 
 

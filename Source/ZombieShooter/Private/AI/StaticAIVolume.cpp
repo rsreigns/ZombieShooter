@@ -39,7 +39,7 @@ void AStaticAIVolume::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, A
 	MyCharacter = Cast<AMyCharacter>(OtherActor);
 	if (MyCharacter)
 	{
-		AIManagerRef->OnNotifyVolumeBeginOverlap(Index);
+		//AIManagerRef->OnNotifyVolumeBeginOverlap(Index);
 	}
 	return;
 }
@@ -48,5 +48,5 @@ void AStaticAIVolume::OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 {
 	if (!MyCharacter) return;
 	MyCharacter = nullptr;
-	AIManagerRef->OnNotifyVolumeEndOverlap(Index);
+	//AIManagerRef->OnNotifyVolumeEndOverlap(Index);
 }

@@ -117,8 +117,8 @@ void AZombieShooterPawn::SetupPlayerInputComponent(class UInputComponent* Player
 		EnhancedInputComponent->BindAction(ResetVehicleAction, ETriggerEvent::Triggered, this, &AZombieShooterPawn::ResetVehicle);
 
 		//Fire 
-		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::StartShooting);
-		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ThisClass::StopShooting);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, WeaponComp, &UWeaponComponent::StartFire);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, WeaponComp, &UWeaponComponent::StopFire);
 
 		EnhancedInputComponent->BindAction(ExitAction, ETriggerEvent::Started, this, &ThisClass::ExitVehicle);
 

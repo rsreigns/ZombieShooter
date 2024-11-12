@@ -29,6 +29,7 @@ void ABaseCharacter::BeginPlay()
 		OwningAnimInstance->OnMontageEnded.AddDynamic(this, &ThisClass::OnMontageEnd);
 		OwningAnimInstance->OnMontageBlendingOut.AddDynamic(this, &ThisClass::OnMontageBlendOut);
 	}
+	ReceiveBeginPlay();
 }
 
 // Called every frame
@@ -78,6 +79,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageE
 
 void ABaseCharacter::PlayMontage(UAnimMontage* MontageToPlay)
 {
+	if (!OwningAnimInstance) return;
 	if (!MontageToPlay) return;
 	if (MontageToPlay == DeathMontage)
 	{
@@ -87,7 +89,7 @@ void ABaseCharacter::PlayMontage(UAnimMontage* MontageToPlay)
 	}
 	if (bIsDead) return;
 	if (GetCharacterMovement()->IsFalling()) return;
-	if (GetMesh()->GetAnimInstance()->IsAnyMontagePlaying()) return;
+	if (OwningAnimInstance->IsAnyMontagePlaying()) return;
 	PlayAnimMontage(MontageToPlay);
 }
 
@@ -98,6 +100,7 @@ void ABaseCharacter::OnMontageEnd(UAnimMontage* Montage, bool bInterrupted)
 
 void ABaseCharacter::OnMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
 {
+	if (!Montage) return;
 	if (!GetCapsuleComponent() && !GetMesh() ) return;
 	if (Montage == DeathMontage)
 	{

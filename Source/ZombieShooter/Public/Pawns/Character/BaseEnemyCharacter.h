@@ -9,6 +9,7 @@
 
 class AEnemyAIController;
 class UBehaviorTree;
+class AAIManagerBase;
 
 UCLASS()
 class ZOMBIESHOOTER_API ABaseEnemyCharacter : public ABaseCharacter
@@ -41,10 +42,14 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	bool bIsInPool;
 
+	UPROPERTY()
+	AAIManagerBase* Manager;
+
 #pragma endregion
 #pragma region CoreFunctions
-
-
+	virtual void OnDeathEvent() override;
+	UFUNCTION()
+	void SendToPool();
 
 #pragma endregion
 

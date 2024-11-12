@@ -23,6 +23,7 @@ AAIManagerBase::AAIManagerBase()
 {
  	
 	PrimaryActorTick.bCanEverTick = true;
+	
 
 }
 
@@ -31,13 +32,15 @@ void AAIManagerBase::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnEnemyPool();
-	GetSpawnVolumes();
+	//GetSpawnVolumes();
+	//GetWorldTimerManager().SetTimer(CheckTimer, this, &ThisClass::CheckSpawnedAI, 5.f, true);
 	
 }
 
 void AAIManagerBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
 
 }
 
@@ -46,22 +49,23 @@ void AAIManagerBase::SpawnEnemyPool()
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	FTransform Transform = GetActorTransform();
-	for (int i = 0; i < StaticPoolSize + DynamicPoolSize + HotspotPoolSize; i++)
+	for (int i = 0; i < StaticPoolSize ; i++)
 	{
 		ABaseEnemyCharacter* EnemyAI = GetWorld()->SpawnActor<ABaseEnemyCharacter>(AIToSpawn, Transform, SpawnParams);
-		if (StaticPool.Num() <= StaticPoolSize)
-		{
-			StaticPool.Push(EnemyAI);
-		}
-		if (DynamicPool.Num() <= DynamicPoolSize)
-		{
-			DynamicPool.Push(EnemyAI);
-		}
-		if (HotspotPool.Num() <= HotspotPoolSize)
-		{
-			HotspotPool.Push(EnemyAI);
-		}
-		ApplyPoolObjectDefaults(true, EnemyAI);
+
+		StaticPool.Add(EnemyAI);
+		EnemyAI->Manager = this;
+
+		ApplyPoolObjectDefaults(false, EnemyAI);
+	
+		//if (DynamicPool.Num() <= DynamicPoolSize)
+		//{
+		//	DynamicPool.Push(EnemyAI);
+		//}
+		//if (HotspotPool.Num() <= HotspotPoolSize)
+		//{
+		//	HotspotPool.Push(EnemyAI);
+		//}
 	}
 }
 
@@ -71,12 +75,53 @@ void AAIManagerBase::ApplyPoolObjectDefaults(bool bApply, ABaseEnemyCharacter* P
 
 	//apply defaults to put object into pool or retrieve it
 	PoolObject->SetActorEnableCollision(bApply);
-	PoolObject->SetActorHiddenInGame(bApply);
+	PoolObject->SetActorHiddenInGame(!bApply);
 	PoolObject->SetActorTickEnabled(bApply);
 	PoolObject->bIsInPool = bApply;
 }
 
+void AAIManagerBase::TakeIntoPool(ABaseEnemyCharacter* AI)
+{
+	if (AI)
+	{
+		StaticPool.Push(AI);
+		ApplyPoolObjectDefaults(true, AI);
+	}
+}
 
+ABaseEnemyCharacter* AAIManagerBase::GetAIFromPool()
+{
+	int32 RemainingAI = StaticPool.Num();
+	if (RemainingAI > 0)
+	{
+		int32 Index = RemainingAI - 1;
+		ABaseEnemyCharacter* OutAI = StaticPool[Index];
+		StaticPool.RemoveAt(Index, EAllowShrinking::Yes);
+		if (OutAI)
+		{
+			ApplyPoolObjectDefaults(true, OutAI);
+			return OutAI;
+		}
+	}
+	return nullptr;
+}
+
+void AAIManagerBase::CheckSpawnedAI()
+{
+	if (StaticPool.Num() > 0)
+	{
+		SpawnAI();
+	}
+}
+
+
+
+
+
+
+
+
+/*
 
 void AAIManagerBase::GetSpawnVolumes()
 {
@@ -166,6 +211,6 @@ void AAIManagerBase::FetchEQSLocation(TSharedPtr<FEnvQueryResult> Result)
 	FetchedLocation = FVector::ZeroVector;
 	return;
 	 
-}
+}*/
 
 

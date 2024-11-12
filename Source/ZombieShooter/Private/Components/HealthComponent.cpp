@@ -34,7 +34,6 @@ bool UHealthComponent::CastDamage(float DamageValue)
 		return true;
 	}
 	CurrentHealth = CurrentHealth - DamageValue;
-	DEBUG::PrintString(FString::Printf(TEXT("Damage Recieved : %f "), DamageValue), 7.f,FColor::Red);
 	if (CurrentHealth <= 0)
 	{
 		return true;
